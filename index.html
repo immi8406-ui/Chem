@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>중화 적정 시뮬레이션</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        .lab-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 40px 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        
+        .title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .description {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: #7f8c8d;
+        }
+
+        .experiment-table {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            width: 100%;
+            height: 600px;
+            position: relative;
+        }
+        
+        /* 스탠드 */
+        .stand {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            max-width: 300px;
+            height: 15px;
+            background-color: #7f8c8d;
+            border-radius: 5px 5px 0 0;
+            box-shadow: 0 -4px 8px rgba(0,0,0,0.15);
+            z-index: 1;
+        }
+        
+        /* 스탠드 로드 */
+        .stand-rod {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 350px;
+            background-color: #bdc3c7;
+            border-radius: 5px 5px 0 0;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            z-index: 2;
+        }
+        
+        /* 뷰렛 컨테이너와 위치 */
+        .burette-container {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        
+        /* 뷰렛 클램프 */
+        .burette-clamp {
+            position: absolute;
+            top: 150px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 50px;
+            z-index: 9;
+        }
+
+        .clamp-arm {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 5px;
+            height: 100%;
+            background-color: #7f8c8d;
+        }
+        
+        .clamp-jaw {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            height: 10px;
+            background-color: #7f8c8d;
+            border-radius: 5px;
+        }
+        
+        .clamp-jaw::before,
+        .clamp-jaw::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            width: 5px;
+            height: 25px;
+            background-color: #7f8c8d;
+        }
+
+        .clamp-jaw::before {
+            left: 0;
+            transform: rotate(-30deg);
+            transform-origin: top left;
+        }
+
+        .clamp-jaw::after {
+            right: 0;
+            transform: rotate(30deg);
+            transform-origin: top right;
+        }
+
+        .burette {
+            width: 30px;
+            height: 350px;
+            border: 1px solid #ccc;
+            background-color: rgba(255, 255, 255, 0.5);
+            position: relative;
+            border-radius: 5px 5px 0 0;
+            overflow: hidden;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+        }
+        
+        .burette-solution {
+            width: 100%;
+            height: 100%;
+            background-color: rgba(41, 128, 185, 0.7);
+            position: absolute;
+            bottom: 0;
+            transition: height 0.3s ease-out;
+        }
+
+        /* 뷰렛 눈금 */
+        .burette::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(to right, #555 0.5px, transparent 0.5px),
+                linear-gradient(to bottom, #555 1px, transparent 1px);
+            background-size: 100% 10%, 100% 7px;
+            background-repeat: repeat-y;
+            opacity: 0.8;
+        }
+
+        /* 뷰렛 팁 추가 */
+        .burette-nozzle {
+            width: 10px;
+            height: 20px;
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 255, 255, 0.5);
+            border: 1px solid #ccc;
+            border-top: none;
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            z-index: 11;
+        }
+
+        .burette-valve {
+            width: 50px;
+            height: 10px;
+            background-color: #95a5a6;
+            position: absolute;
+            top: 310px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 5px;
+        }
+
+        .valve-handle {
+            width: 50px;
+            height: 10px;
+            background-color: #7f8c8d;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 5px;
+            transform-origin: center center;
+            transition: transform 0.3s ease;
+        }
+
+        .burette-valve[data-state="open"] .valve-handle {
+            transform: rotate(90deg);
+        }
+        
+        /* 용액 방울 CSS */
+        .liquid-drop {
+            position: absolute;
+            top: 375px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 10px;
+            background-color: rgba(41, 128, 185, 0.7);
+            border-radius: 50%;
+            opacity: 1;
+            z-index: 15;
+            animation: drop-animate 0.5s ease-in forwards;
+        }
+        
+        /* 애니메이션 키프레임 */
+        @keyframes drop-animate {
+            0% {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(-50%) translateY(120px);
+                opacity: 0;
+            }
+        }
+
+
+        /* 비커 컨테이너와 위치 */
+        .beaker-container {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 5;
+        }
+
+        /* 비커 본체 (주둥이 제거) */
+        .beaker-body {
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.7);
+            border: 1px solid #ccc;
+            border-top: none;
+            position: absolute;
+            bottom: 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 0 0 10px 10px;
+            /* 주둥이 제거: 사각형으로 변경 */
+            clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+        }
+
+        /* 비커 눈금 (수정된 CSS) */
+        .beaker-marks {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .beaker-mark {
+            position: absolute;
+            left: 10px;
+            right: 10px;
+            height: 1px;
+            background-color: #aaa;
+        }
+        
+        .beaker-mark-label {
+            position: absolute;
+            right: 20px;
+            font-size: 0.8rem;
+            color: #555;
+            line-height: 1;
+        }
+
+        #mark-100 { bottom: 40px; }
+        #label-100 { bottom: 40px; }
+        #mark-200 { bottom: 80px; }
+        #label-200 { bottom: 80px; }
+        #mark-300 { bottom: 120px; }
+        #label-300 { bottom: 120px; }
+        #mark-400 { bottom: 160px; }
+        #label-400 { bottom: 160px; }
+        
+        .beaker-solution {
+            width: 90%;
+            height: 20%; /* 100mL / 500mL = 20% */
+            background-color: rgba(135, 206, 250, 0.5); 
+            position: absolute;
+            bottom: 0;
+            transition: background-color 0.5s, height 0.3s ease-out;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+        
+        .volume-display {
+            width: 120px;
+            height: 80px;
+            background-color: #2c3e50;
+            color: #2ecc71;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            border-radius: 8px;
+            box-shadow: inset 0 0 8px #000;
+            padding: 5px;
+            position: absolute;
+            top: 200px;
+            left: 80px;
+        }
+
+        .volume-label {
+            font-size: 1rem;
+            color: #ecf0f1;
+            margin-bottom: 5px;
+        }
+
+        .volume-value {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 1.8rem;
+        }
+
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button:active {
+            transform: translateY(2px);
+        }
+
+        #titration-start, #titration-stop {
+            background-color: #3498db;
+        }
+
+        #titration-start:hover, #titration-stop:hover {
+            background-color: #2980b9;
+        }
+
+        #reset {
+            background-color: #e74c3c;
+        }
+        
+        #reset:hover {
+            background-color: #c0392b;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            border: 1px solid #bdc3c7;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #2c3e50;
+            display: none;
+        }
+        
+        /* 커스텀 알림창 */
+        .custom-alert {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #34495e;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none;
+        }
+        .custom-alert button {
+            margin-top: 10px;
+            background-color: #2ecc71;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="lab-container">
+        <h1 class="title">중화 적정 시뮬레이션</h1>
+        <p class="description">
+            뷰렛에 담긴 **0.1M 수산화나트륨(NaOH)** 표준 용액을 미지 농도의 **묽은 염산(HCl)**이 담긴 비커에 떨어뜨려 농도를 찾아보세요.
+            지시약은 페놀프탈레인이 사용됩니다.
+        </p>
+        <div class="experiment-table">
+            <div class="volume-display">
+                <div class="volume-label">추가된 표준 용액의 부피</div>
+                <div id="volume-value" class="volume-value">0.0 mL</div>
+            </div>
+            
+            <div class="stand-rod"></div>
+            <div class="burette-clamp">
+                <div class="clamp-jaw"></div>
+                <div class="clamp-arm"></div>
+            </div>
+            <div class="burette-container">
+                <div id="burette" class="burette">
+                    <div id="burette-solution" class="burette-solution"></div>
+                </div>
+                <!-- 뷰렛 팁 -->
+                <div class="burette-nozzle"></div>
+                <div id="burette-valve" class="burette-valve" data-state="closed">
+                    <div class="valve-handle"></div>
+                </div>
+            </div>
+            
+            <div id="beaker-container" class="beaker-container">
+                <div class="beaker-marks">
+                    <div id="mark-100" class="beaker-mark"></div>
+                    <div id="label-100" class="beaker-mark-label">100</div>
+                    <div id="mark-200" class="beaker-mark"></div>
+                    <div id="label-200" class="beaker-mark-label">200</div>
+                    <div id="mark-300" class="beaker-mark"></div>
+                    <div id="label-300" class="beaker-mark-label">300</div>
+                    <div id="mark-400" class="beaker-mark"></div>
+                    <div id="label-400" class="beaker-mark-label">400</div>
+                </div>
+                <div id="beaker-solution" class="beaker-solution"></div>
+                <div class="beaker-body"></div>
+            </div>
+            <div class="stand"></div>
+        </div>
+        
+        <div class="controls">
+            <button id="titration-start">적정 시작</button>
+            <button id="titration-stop">적정 멈춤</button>
+            <button id="reset">초기화</button>
+        </div>
+        <div id="result"></div>
+    </div>
+    
+    <!-- 커스텀 알림창 HTML -->
+    <div id="custom-alert" class="custom-alert">
+        <p id="alert-message"></p>
+        <button id="alert-ok">확인</button>
+    </div>
+
+    <script>
+        // HTML 요소 가져오기
+        const beakerSolution = document.getElementById('beaker-solution');
+        const buretteSolution = document.getElementById('burette-solution');
+        const volumeDisplay = document.getElementById('volume-value');
+        const startButton = document.getElementById('titration-start');
+        const stopButton = document.getElementById('titration-stop');
+        const resetButton = document.getElementById('reset');
+        const resultDiv = document.getElementById('result');
+        const buretteValve = document.getElementById('burette-valve');
+        const customAlert = document.getElementById('custom-alert');
+        const alertMessage = document.getElementById('alert-message');
+        const alertOkButton = document.getElementById('alert-ok');
+        const buretteContainer = document.querySelector('.burette-container');
+
+        // --- 시뮬레이션 변수 설정 ---
+        let standardVolume = 0; // 사용된 표준 용액 부피 (단위: mL)
+        // 뷰렛의 총 용량
+        const totalBuretteVolume = 50; 
+        // 미지 용액(HCl)의 초기 부피 (단위: mL)
+        const unknownVolume = 100; 
+        // 비커의 최대 용량 (시각적 표시 기준)
+        const beakerMaxCapacity = 500; 
+        
+        // 표준 용액(NaOH)의 농도 (단위: M)
+        const standardConcentration = 0.1;
+        
+        // 미지 용액(HCl)의 실제 농도 (사용자는 볼 수 없음)
+        const unknownConcentration = 0.01; 
+        
+        // 용액 한 방울의 부피 (단위: mL)
+        const dropVolume = 0.1; 
+
+        let intervalId = null; // 인터벌 ID를 저장하여 적정 멈춤/초기화에 사용
+
+        // --- 속도 조절 변수 및 함수 ---
+        // 중화점 부피를 미리 계산합니다. (M1V1 = M2V2)
+        const equivalencePointVolume = (unknownConcentration * unknownVolume) / standardConcentration;
+        const slowDownRange = 5; // 중화점 전후로 속도가 느려지는 범위 (mL)
+        let currentInterval = 500; // 현재 적정 속도 (ms)
+        
+        function getTitrationSpeed() {
+            const distanceToEquivalence = Math.abs(standardVolume - equivalencePointVolume);
+            if (distanceToEquivalence <= slowDownRange) {
+                // 중화점에 가까워질수록 속도를 선형적으로 늦춤
+                const slowFactor = 1 - (distanceToEquivalence / slowDownRange);
+                // 최대 2.5초까지 느려지도록 설정 (500ms + 2000ms)
+                return 500 + slowFactor * 2000;
+            }
+            return 500; // 평상시 속도
+        }
+
+        // 커스텀 알림 함수
+        function showAlert(message) {
+            alertMessage.innerText = message;
+            customAlert.style.display = 'block';
+        }
+        
+        alertOkButton.addEventListener('click', () => {
+            customAlert.style.display = 'none';
+        });
+        
+        // --- 용액 한 방울 떨어뜨리는 애니메이션 함수 ---
+        function dropLiquid() {
+            if (standardVolume >= totalBuretteVolume) {
+                // 뷰렛 용액이 모두 소진되면 멈춤
+                clearInterval(intervalId);
+                intervalId = null;
+                buretteValve.dataset.state = "closed";
+                showAlert(`적정 종료! 뷰렛의 용액이 모두 소진되었습니다. 사용된 부피: ${standardVolume.toFixed(1)} mL`);
+                return;
+            }
+
+            // 한 방울의 DOM 엘리먼트 생성
+            const drop = document.createElement('div');
+            drop.classList.add('liquid-drop');
+            buretteContainer.appendChild(drop);
+            
+            // 애니메이션이 끝나면 DOM에서 제거
+            drop.addEventListener('animationend', () => {
+                drop.remove();
+            });
+
+            // 부피 업데이트
+            standardVolume += dropVolume;
+            const currentPH = calculatePH(standardVolume);
+            updateUI(currentPH);
+        }
+
+        // --- pH 계산 함수 (내부 로직용, 화면에 표시되지 않음) ---
+        function calculatePH(addedVolume) {
+            const totalVolume = unknownVolume + addedVolume;
+            const molesOfH = unknownConcentration * unknownVolume / 1000;
+            const molesOfOH = standardConcentration * addedVolume / 1000;
+            
+            let ph;
+            
+            if (molesOfOH > molesOfH) {
+                const excessOH = molesOfOH - molesOfH;
+                const ohConcentration = excessOH / (totalVolume / 1000);
+                const poh = -Math.log10(ohConcentration);
+                ph = 14 - poh;
+            } else if (molesOfH > molesOfOH) {
+                const excessH = molesOfH - molesOfOH;
+                const hConcentration = excessH / (totalVolume / 1000);
+                ph = -Math.log10(hConcentration);
+            } else {
+                ph = 7;
+            }
+            return ph;
+        }
+
+        // --- UI 업데이트 함수 (수정) ---
+        function updateUI(ph) {
+            const buretteHeight = 100 - (standardVolume / totalBuretteVolume * 100);
+            buretteSolution.style.height = `${buretteHeight}%`;
+            
+            // 비커 용액의 높이를 비커 최대 용량(500mL)을 기준으로 계산
+            const beakerHeight = ((unknownVolume + standardVolume) / beakerMaxCapacity) * 100;
+            beakerSolution.style.height = `${beakerHeight}%`;
+
+            volumeDisplay.innerText = `${standardVolume.toFixed(1)} mL`;
+
+            // 비커 용액 색깔 바꾸기 (페놀프탈레인 지시약)
+            if (ph > 8.2) {
+                beakerSolution.style.backgroundColor = 'rgba(255, 105, 180, 0.7)';
+            } else {
+                beakerSolution.style.backgroundColor = 'rgba(135, 206, 250, 0.5)';
+            }
+        }
+        
+        // --- 이벤트 핸들러 (수정) ---
+        
+        startButton.addEventListener('click', () => {
+            if (intervalId) return;
+            
+            buretteValve.dataset.state = "open";
+            beakerSolution.style.backgroundColor = 'rgba(135, 206, 250, 0.5)';
+
+            function startDropping() {
+                if (standardVolume >= totalBuretteVolume) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                    buretteValve.dataset.state = "closed";
+                    showAlert(`적정 종료! 뷰렛의 용액이 모두 소진되었습니다. 사용된 부피: ${standardVolume.toFixed(1)} mL`);
+                    return;
+                }
+
+                const currentSpeed = getTitrationSpeed();
+                if (currentInterval !== currentSpeed) {
+                    clearInterval(intervalId);
+                    currentInterval = currentSpeed;
+                    intervalId = setInterval(startDropping, currentInterval);
+                }
+
+                dropLiquid();
+            }
+
+            // 초기 속도로 시작
+            currentInterval = getTitrationSpeed();
+            intervalId = setInterval(startDropping, currentInterval);
+        });
+        
+        stopButton.addEventListener('click', () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+                buretteValve.dataset.state = "closed";
+                const finalVolume = standardVolume.toFixed(1);
+
+                const theoreticalEquivalencePoint = equivalencePointVolume;
+
+                let message = `사용자가 적정을 멈췄습니다. 추가된 표준 용액의 부피는 <strong>${finalVolume} mL</strong> 입니다.`;
+                if (Math.abs(standardVolume - theoreticalEquivalencePoint) < dropVolume) {
+                    message += `<br>축하합니다! 중화점을 정확하게 찾았습니다.`;
+                } else if (standardVolume > theoreticalEquivalencePoint) {
+                    message += `<br>중화점을 지나쳤습니다.`;
+                } else {
+                    message += `<br>아직 중화점에 도달하지 못했습니다.`;
+                }
+
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `
+                    <h2>적정 완료!</h2>
+                    <p>${message}</p>
+                    <p>이 값을 바탕으로 미지 용액의 농도를 계산해보세요.</p>
+                `;
+                showAlert(`적정 완료! 추가된 표준 용액의 부피: ${finalVolume} mL`);
+            }
+        });
+
+        resetButton.addEventListener('click', () => {
+            clearInterval(intervalId);
+            intervalId = null;
+            standardVolume = 0;
+            
+            buretteValve.dataset.state = "closed";
+            buretteSolution.style.height = '100%';
+            beakerSolution.style.height = '20%'; /* 100mL / 500mL = 20% */
+            beakerSolution.style.backgroundColor = 'rgba(135, 206, 250, 0.5)';
+            volumeDisplay.innerText = `0.0 mL`;
+            resultDiv.style.display = 'none';
+        });
+        
+        // 초기 화면 설정 함수 (수정)
+        function initUI() {
+            // 초기 비커 용액 높이 (100mL / 500mL) = 20%
+            beakerSolution.style.height = '20%';
+            updateUI(calculatePH(0));
+        }
+
+        // 초기 화면 업데이트
+        initUI();
+    </script>
+</body>
+</html>
